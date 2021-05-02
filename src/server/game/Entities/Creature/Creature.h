@@ -312,12 +312,16 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
 
         bool IsReturningHome() const;
 
-        void SearchFormation();
-        CreatureGroup* GetFormation() { return m_formation; }
-        void SetFormation(CreatureGroup* formation) { m_formation = formation; }
-        bool IsFormationLeader() const;
-        void SignalFormationMovement();
-        bool IsFormationLeaderMoveAllowed() const;
+        // Formations
+        // Searches for the leader of an AI Formation and joins the formation if found
+        void JoinAIFormationIfAvailable();
+        // Searches for formation members that have been spawned prior to the leader's spawn and assigns them to its formation
+        void PickUpOrphanedFormationMembers();
+        // Leaves the AIFormation that the creature is currently following
+        void LeaveCurrentAIFormation();
+
+        // Stores the ObjectGuid of the creature's current formation leader that it is following right now.
+        void SetFormationLeaderGUID(ObjectGuid guid) { _formationLeaderGUID; }
 
         void SetDisableReputationGain(bool disable) { DisableReputationGain = disable; }
         bool IsReputationGainDisabled() const { return DisableReputationGain; }
@@ -446,8 +450,9 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
         // Cyclic spline path
         uint32 _cyclicSplinePathId;
 
-        //Formation var
-        CreatureGroup* m_formation;
+        // AI Formation Members
+        ObjectGuid _formationLeaderGUID;
+
         bool m_triggerJustAppeared;
         bool m_respawnCompatibilityMode;
 

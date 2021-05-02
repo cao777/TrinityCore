@@ -334,7 +334,7 @@ Unit::Unit(bool isWorldObject) :
     m_vehicleKit(nullptr), m_unitTypeMask(UNIT_MASK_NONE), m_Diminishing(),
     m_isEngaged(false), m_combatManager(this), m_threatManager(this),
     i_AI(nullptr), m_aiLocked(false), _lastDamagedTime(0),
-    m_spellHistory(new SpellHistory(this)), _isIgnoringCombat(false)
+    m_spellHistory(new SpellHistory(this)), _isIgnoringCombat(false), _aiFormation(new AIFormation(this))
 {
     m_objectType |= TYPEMASK_UNIT;
     m_objectTypeId = TYPEID_UNIT;
@@ -443,6 +443,7 @@ Unit::~Unit()
     delete m_charmInfo;
     delete movespline;
     delete m_spellHistory;
+    delete _aiFormation;
 
     ASSERT(!m_duringRemoveFromWorld);
     ASSERT(!m_attacking);
@@ -516,6 +517,7 @@ void Unit::Update(uint32 p_time)
 
     UpdateSplineMovement(p_time);
     i_motionMaster->UpdateMotion(p_time);
+    _aiFormation->Update(p_time);
 
     if (!i_AI && (GetTypeId() != TYPEID_PLAYER || IsCharmed()))
         UpdateCharmAI();

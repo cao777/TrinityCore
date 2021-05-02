@@ -23,6 +23,7 @@
 #include "AccountMgr.h"
 #include "AchievementMgr.h"
 #include "AddonMgr.h"
+#include "AIFormationMgr.h"
 #include "ArchaeologyMgr.h"
 #include "ArenaTeamMgr.h"
 #include "AuctionHouseBot.h"
@@ -36,7 +37,6 @@
 #include "Chat.h"
 #include "Config.h"
 #include "CreatureAIRegistry.h"
-#include "CreatureGroups.h"
 #include "CreatureTextMgr.h"
 #include "DatabaseEnv.h"
 #include "DB2Stores.h"
@@ -2117,8 +2117,8 @@ void World::SetInitialWorldSettings()
     TC_LOG_INFO("server.loading", "Loading SmartAI Waypoints...");
     sSmartWaypointMgr->LoadFromDB();
 
-    TC_LOG_INFO("server.loading", "Loading Creature Formations...");
-    sFormationMgr->LoadCreatureFormations();
+    TC_LOG_INFO("server.loading", "Loading Creature Formation Data...");
+    sAIFormationMgr->LoadAIFormations();
 
     TC_LOG_INFO("server.loading", "Loading World States...");              // must be loaded before battleground, outdoor PvP and conditions
     LoadWorldStates();

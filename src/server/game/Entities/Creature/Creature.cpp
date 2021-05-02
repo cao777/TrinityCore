@@ -16,12 +16,12 @@
  */
 
 #include "Creature.h"
+#include "AIFormationMgr.h"
 #include "BattlegroundMgr.h"
 #include "CellImpl.h"
 #include "Common.h"
 #include "CreatureAI.h"
 #include "CreatureAISelector.h"
-#include "CreatureGroups.h"
 #include "CombatPackets.h"
 #include "DatabaseEnv.h"
 #include "Formulas.h"
@@ -272,7 +272,7 @@ m_respawnDelay(300), m_corpseDelay(60), m_respawnradius(0.0f), m_boundaryCheckTi
 m_defaultMovementType(IDLE_MOTION_TYPE), m_spawnId(0), m_equipmentId(0), m_originalEquipmentId(0), m_AlreadyCallAssistance(false),
 m_AlreadySearchedAssistance(false), m_regenHealth(true), m_cannotReachTarget(false), m_cannotReachTimer(0), m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL),
 m_originalEntry(0), m_homePosition(), m_transportHomePosition(), m_creatureInfo(nullptr), m_creatureData(nullptr), _waypointPathId(0), _currentWaypointNodeInfo(0, 0), _cyclicSplinePathId(0),
-m_formation(nullptr), m_triggerJustAppeared(true), m_respawnCompatibilityMode(false), _isMissingSwimmingFlagOutOfCombat(false), _noNpcDamageBelowPctHealth(0.f)
+m_triggerJustAppeared(true), m_respawnCompatibilityMode(false), _isMissingSwimmingFlagOutOfCombat(false), _noNpcDamageBelowPctHealth(0.f)
 {
     m_valuesCount = UNIT_END;
 
@@ -302,7 +302,8 @@ void Creature::AddToWorld()
         UpdatePowerRegeneration(GetPowerType());
 
         Unit::AddToWorld();
-        SearchFormation();
+        JoinAIFormationIfAvailable();
+        PickUpOrphanedFormationMembers();
         AIM_Initialize();
         if (IsVehicle())
             GetVehicleKit()->Install();
@@ -319,8 +320,7 @@ void Creature::RemoveFromWorld()
         if (GetZoneScript())
             GetZoneScript()->OnCreatureRemove(this);
 
-        if (m_formation)
-            sFormationMgr->RemoveCreatureFromGroup(m_formation, this);
+        LeaveCurrentAIFormation();
 
         Unit::RemoveFromWorld();
 
@@ -350,45 +350,48 @@ bool Creature::IsReturningHome() const
     return false;
 }
 
-void Creature::SearchFormation()
+void Creature::JoinAIFormationIfAvailable()
 {
-    if (IsSummon())
+    if (!_formationLeaderGUID.IsEmpty())
+    {
+        // For now we demand a manual removal of formation members. We might implement automatic formation switching later, but not now.
+        TC_LOG_ERROR("entities.unit", "Creature (GUID: %u Entry: %u) tried to join a AIFormation while already being assigned to one. Possible bug or dirty coding.", GetGUID().GetCounter(), GetEntry());
         return;
+    }
 
-    ObjectGuid::LowType lowguid = GetSpawnId();
-    if (!lowguid)
-        return;
-
-    CreatureGroupInfoType::iterator frmdata = sFormationMgr->CreatureGroupMap.find(lowguid);
-    if (frmdata != sFormationMgr->CreatureGroupMap.end())
-        sFormationMgr->AddCreatureToGroup(frmdata->second.LeaderGUID, this);
+    if (AIFormationMemberData const* memberData = sAIFormationMgr->GetAIFormationMemberDataForSpawnId(GetSpawnId()))
+        if (Creature* leader = GetMap()->GetCreatureBySpawnId(memberData->LeaderSpawnId))
+            leader->GetAIFormation()->AddFollower(this, memberData->FormationIndex);
 }
 
-bool Creature::IsFormationLeader() const
+void Creature::PickUpOrphanedFormationMembers()
 {
-    if (!m_formation)
-        return false;
-
-    return m_formation->IsLeader(this);
-}
-
-void Creature::SignalFormationMovement()
-{
-    if (!m_formation)
+    std::vector<ObjectGuid::LowType> const* memberSpawnIds = sAIFormationMgr->GetAIFormationMemberGUIDsForSpawnId(GetSpawnId());
+    if (!memberSpawnIds)
         return;
 
-    if (!m_formation->IsLeader(this))
-        return;
+    for (ObjectGuid::LowType spawnId : *memberSpawnIds)
+    {
+        Creature* member = GetMap()->GetCreatureBySpawnId(spawnId);
+        if (!member)
+            continue;
 
-    m_formation->LeaderStartedMoving();
+        uint8 formationIndex = 0;
+        if (AIFormationMemberData const* memberData = sAIFormationMgr->GetAIFormationMemberDataForSpawnId(spawnId))
+            formationIndex = memberData->FormationIndex;
+
+        if (member->_formationLeaderGUID.IsEmpty())
+            GetAIFormation()->AddFollower(member, formationIndex);
+    }
 }
 
-bool Creature::IsFormationLeaderMoveAllowed() const
+void Creature::LeaveCurrentAIFormation()
 {
-    if (!m_formation)
-        return false;
+    if (_formationLeaderGUID.IsEmpty())
+        return;
 
-    return m_formation->CanLeaderStartMoving();
+    if (Creature* formationLeader = ObjectAccessor::GetCreature(*this, _formationLeaderGUID))
+        formationLeader->GetAIFormation()->RemoveFollower(this);
 }
 
 void Creature::RemoveCorpse(bool setSpawnTime)
@@ -930,17 +933,10 @@ bool Creature::AIM_Initialize(CreatureAI* ai)
 
 void Creature::Motion_Initialize()
 {
-    if (!m_formation)
+    if (_formationLeaderGUID.IsEmpty())
         GetMotionMaster()->Initialize();
-    else if (m_formation->getLeader() == this)
-    {
-        m_formation->FormationReset(false);
-        GetMotionMaster()->Initialize();
-    }
-    else if (m_formation->isFormed())
-        GetMotionMaster()->MoveIdle(); //wait the order of leader
     else
-        GetMotionMaster()->Initialize();
+        GetMotionMaster()->MoveIdle();
 }
 
 bool Creature::Create(ObjectGuid::LowType guidlow, Map* map, uint32 entry, Position const& pos, CreatureData const* data /*= nullptr*/, uint32 vehId /*= 0*/, bool dynamic)
@@ -1915,9 +1911,7 @@ void Creature::setDeathState(DeathState s)
 
         SetNoSearchAssistance(false);
 
-        //Dismiss group if is leader
-        if (m_formation && m_formation->getLeader() == this)
-            m_formation->FormationReset(true);
+        GetAIFormation()->RemoveAllFollowers();
 
         bool needsFalling = (IsFlying() || IsHovering()) && !IsUnderWater();
         SetHover(false, false);
@@ -3279,8 +3273,10 @@ void Creature::AtEngage(Unit* target)
 
     if (CreatureAI* ai = AI())
         ai->JustEngagedWith(target);
-    if (CreatureGroup* formation = GetFormation())
-        formation->MemberEngagingTarget(this, target);
+
+
+    // if (CreatureGroup* formation = GetFormation())
+    //    formation->MemberEngagingTarget(this, target);
 
     if (GetAI() && !IsControlledByPlayer())
         SendAIReaction(AI_REACTION_HOSTILE);

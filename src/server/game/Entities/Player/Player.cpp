@@ -378,6 +378,8 @@ Player::Player(WorldSession* session): Unit(true)
     m_groupUpdateTimer.Reset(5000);
 
     _transportSpawnID = 0;
+
+    GetAIFormation().SetFormationType(AIFormationType::CircleLeader);
 }
 
 Player::~Player()
