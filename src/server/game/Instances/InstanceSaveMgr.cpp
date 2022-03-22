@@ -56,13 +56,13 @@ void InstanceSaveManager::Unload()
         for (InstanceSave::PlayerListType::iterator itr2 = save->m_playerList.begin(), next = itr2; itr2 != save->m_playerList.end(); itr2 = next)
         {
             ++next;
-            (*itr2)->UnbindInstance(save->GetMapId(), save->GetDifficulty(), true);
+            (*itr2)->UnbindInstance(save->GetMapId(), true);
         }
 
         for (InstanceSave::GroupListType::iterator itr2 = save->m_groupList.begin(), next = itr2; itr2 != save->m_groupList.end(); itr2 = next)
         {
             ++next;
-            (*itr2)->UnbindInstance(save->GetMapId(), save->GetDifficulty(), true);
+            (*itr2)->UnbindInstance(save->GetMapId(), true);
         }
 
         delete save;
@@ -558,7 +558,7 @@ void InstanceSaveManager::_ResetSave(InstanceSaveHashMap::iterator &itr)
     std::vector<Player*> temp; // list of expired binds that should be unbound
     for (Player* player : pList)
     {
-        if (InstancePlayerBind* bind = player->GetBoundInstance(itr->second->GetMapId(), itr->second->GetDifficulty()))
+        if (InstancePlayerBind* bind = player->GetBoundInstance(itr->second->GetMapId()))
         {
             ASSERT(bind->save == itr->second);
             if (bind->perm && bind->extendState) // permanent and not already expired
@@ -572,15 +572,13 @@ void InstanceSaveManager::_ResetSave(InstanceSaveHashMap::iterator &itr)
         temp.push_back(player);
     }
     for (Player* player : temp)
-    {
-        player->UnbindInstance(itr->second->GetMapId(), itr->second->GetDifficulty(), true);
-    }
+        player->UnbindInstance(itr->second->GetMapId(), true);
 
     InstanceSave::GroupListType &gList = itr->second->m_groupList;
     while (!gList.empty())
     {
         Group* group = *(gList.begin());
-        group->UnbindInstance(itr->second->GetMapId(), itr->second->GetDifficulty(), true);
+        group->UnbindInstance(itr->second->GetMapId(), true);
     }
 
     if (shouldDelete)

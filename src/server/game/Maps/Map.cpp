@@ -3773,7 +3773,7 @@ Map::EnterState InstanceMap::CannotEnter(Player* player)
         return CANNOT_ENTER_ZONE_IN_COMBAT;
 
     // cannot enter if player is permanent saved to a different instance id
-    if (InstancePlayerBind* playerBind = player->GetBoundInstance(GetId(), GetDifficulty()))
+    if (InstancePlayerBind* playerBind = player->GetBoundInstance(GetId()))
         if (playerBind->perm && playerBind->save)
             if (playerBind->save->GetInstanceId() != GetInstanceId())
                 return CANNOT_ENTER_INSTANCE_BIND_MISMATCH;
@@ -3987,7 +3987,7 @@ bool InstanceMap::Reset(uint8 method)
                 // set the homebind timer for players inside (1 minute)
                 for (MapRefManager::iterator itr = m_mapRefManager.begin(); itr != m_mapRefManager.end(); ++itr)
                 {
-                    InstancePlayerBind* bind = itr->GetSource()->GetBoundInstance(GetId(), GetDifficulty());
+                    InstancePlayerBind* bind = itr->GetSource()->GetBoundInstance(GetId());
                     if (bind && bind->extendState && bind->save->GetInstanceId() == GetInstanceId())
                         doUnload = false;
                     else
@@ -4042,7 +4042,7 @@ void InstanceMap::PermBindAllPlayers()
         if (player->IsGameMaster())
             continue;
 
-        InstancePlayerBind* bind = player->GetBoundInstance(save->GetMapId(), save->GetDifficulty());
+        InstancePlayerBind* bind = player->GetBoundInstance(save->GetMapId());
         if (bind && bind->perm)
         {
             if (bind->save && bind->save->GetInstanceId() != save->GetInstanceId())

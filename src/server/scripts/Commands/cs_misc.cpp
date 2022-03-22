@@ -425,7 +425,7 @@ public:
 
                 // if the player or the player's group is bound to another instance
                 // the player will not be bound to another one
-                InstancePlayerBind* bind = _player->GetBoundInstance(target->GetMapId(), target->GetDifficulty(map->IsRaid()));
+                InstancePlayerBind* bind = _player->GetBoundInstance(target->GetMapId());
                 if (!bind)
                 {
                     Group* group = _player->GetGroup();

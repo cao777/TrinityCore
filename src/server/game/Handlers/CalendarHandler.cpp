@@ -106,20 +106,17 @@ void WorldSession::HandleCalendarGetCalendar(WorldPacket& /*recvData*/)
 
     ByteBuffer dataBuffer;
     uint32 boundCounter = 0;
-    for (uint8 i = 0; i < MAX_DIFFICULTY; ++i)
+    Player::BoundInstancesMap boundInstances = _player->GetBoundInstances();
+    for (Player::BoundInstancesMap::const_iterator itr = boundInstances.begin(); itr != boundInstances.end(); ++itr)
     {
-        Player::BoundInstancesMap boundInstances = _player->GetBoundInstances(Difficulty(i));
-        for (Player::BoundInstancesMap::const_iterator itr = boundInstances.begin(); itr != boundInstances.end(); ++itr)
+        if (itr->second.perm)
         {
-            if (itr->second.perm)
-            {
-                InstanceSave const* save = itr->second.save;
-                dataBuffer << uint32(save->GetMapId());
-                dataBuffer << uint32(save->GetDifficulty());
-                dataBuffer << uint32(save->GetResetTime() - currTime);
-                dataBuffer << uint64(save->GetInstanceId());     // instance save id as unique instance copy id
-                ++boundCounter;
-            }
+            InstanceSave const* save = itr->second.save;
+            dataBuffer << uint32(save->GetMapId());
+            dataBuffer << uint32(save->GetDifficulty());
+            dataBuffer << uint32(save->GetResetTime() - currTime);
+            dataBuffer << uint64(save->GetInstanceId());     // instance save id as unique instance copy id
+            ++boundCounter;
         }
     }
 
@@ -708,7 +705,7 @@ void WorldSession::HandleSetSavedInstanceExtend(WorldPacket& recvData)
 
     if (Player* player = GetPlayer())
     {
-        InstancePlayerBind* instanceBind = player->GetBoundInstance(mapId, Difficulty(difficulty), toggleExtend == 1); // include expired instances if we are toggling extend on
+        InstancePlayerBind* instanceBind = player->GetBoundInstance(mapId, toggleExtend == 1); // include expired instances if we are toggling extend on
         if (!instanceBind || !instanceBind->save || !instanceBind->perm)
             return;
 

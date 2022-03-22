@@ -93,9 +93,8 @@ Group::~Group()
     }
 
     // this may unload some instance saves
-    for (uint8 i = 0; i < MAX_DIFFICULTY; ++i)
-        for (BoundInstancesMap::iterator itr2 = m_boundInstances[i].begin(); itr2 != m_boundInstances[i].end(); ++itr2)
-            itr2->second.save->RemoveGroup(this);
+    for (BoundInstancesMap::iterator itr2 = m_boundInstances.begin(); itr2 != m_boundInstances.end(); ++itr2)
+        itr2->second.save->RemoveGroup(this);
 
     // Sub group counters clean up
     delete[] m_subGroupsCounts;
@@ -717,25 +716,22 @@ void Group::ChangeLeader(ObjectGuid newLeaderGuid)
         CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
         // Remove the groups permanent instance bindings
-        for (uint8 i = 0; i < MAX_DIFFICULTY; ++i)
+        for (BoundInstancesMap::iterator itr = m_boundInstances.begin(); itr != m_boundInstances.end();)
         {
-            for (BoundInstancesMap::iterator itr = m_boundInstances[i].begin(); itr != m_boundInstances[i].end();)
+            // Do not unbind saves of instances that already had map created (a newLeader entered)
+            // forcing a new instance with another leader requires group disbanding (confirmed on retail)
+            if (itr->second.perm && !sMapMgr->FindMap(itr->first, itr->second.save->GetInstanceId()))
             {
-                // Do not unbind saves of instances that already had map created (a newLeader entered)
-                // forcing a new instance with another leader requires group disbanding (confirmed on retail)
-                if (itr->second.perm && !sMapMgr->FindMap(itr->first, itr->second.save->GetInstanceId()))
-                {
-                    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GROUP_INSTANCE_PERM_BINDING);
-                    stmt->setUInt32(0, m_dbStoreId);
-                    stmt->setUInt32(1, itr->second.save->GetInstanceId());
-                    trans->Append(stmt);
+                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GROUP_INSTANCE_PERM_BINDING);
+                stmt->setUInt32(0, m_dbStoreId);
+                stmt->setUInt32(1, itr->second.save->GetInstanceId());
+                trans->Append(stmt);
 
-                    itr->second.save->RemoveGroup(this);
-                    m_boundInstances[i].erase(itr++);
-                }
-                else
-                    ++itr;
+                itr->second.save->RemoveGroup(this);
+                m_boundInstances.erase(itr++);
             }
+            else
+                ++itr;
         }
 
         // Copy the permanent binds from the new leader to the group
@@ -770,23 +766,20 @@ void Group::ConvertLeaderInstancesToGroup(Player* player, Group* group, bool swi
 {
     // copy all binds to the group, when changing leader it's assumed the character
     // will not have any solo binds
-    for (uint8 i = 0; i < MAX_DIFFICULTY; ++i)
+    for (Player::BoundInstancesMap::iterator itr = player->m_boundInstances.begin(); itr != player->m_boundInstances.end();)
     {
-        for (Player::BoundInstancesMap::iterator itr = player->m_boundInstances[i].begin(); itr != player->m_boundInstances[i].end();)
-        {
-            if (!switchLeader || !group->GetBoundInstance(itr->second.save->GetDifficulty(), itr->first))
-                if (itr->second.extendState) // not expired
-                    group->BindToInstance(itr->second.save, itr->second.perm, false);
+        if (!switchLeader || !group->GetBoundInstance(itr->first))
+            if (itr->second.extendState) // not expired
+                group->BindToInstance(itr->second.save, itr->second.perm, false);
 
-            // permanent binds are not removed
-            if (switchLeader && !itr->second.perm)
-            {
-                // increments itr in call
-                player->UnbindInstance(itr, Difficulty(i), false);
-            }
-            else
-                ++itr;
+        // permanent binds are not removed
+        if (switchLeader && !itr->second.perm)
+        {
+            // increments itr in call
+            player->UnbindInstance(itr, false);
         }
+        else
+            ++itr;
     }
 
     /* if group leader is in a non-raid dungeon map and nobody is actually bound to this map then the group can "take over" the instance *
@@ -2305,9 +2298,7 @@ void Group::ResetInstances(uint8 method, bool isRaid, Player* SendMsgTo)
     // method can be INSTANCE_RESET_ALL, INSTANCE_RESET_CHANGE_DIFFICULTY, INSTANCE_RESET_GROUP_DISBAND
 
     // we assume that when the difficulty changes, all instances that can be reset will be
-    Difficulty diff = GetDifficulty(isRaid);
-
-    for (BoundInstancesMap::iterator itr = m_boundInstances[diff].begin(); itr != m_boundInstances[diff].end();)
+    for (BoundInstancesMap::iterator itr = m_boundInstances.begin(); itr != m_boundInstances.end();)
     {
         InstanceSave* instanceSave = itr->second.save;
         const MapEntry* entry = sMapStore.LookupEntry(itr->first);
@@ -2320,7 +2311,7 @@ void Group::ResetInstances(uint8 method, bool isRaid, Player* SendMsgTo)
         if (method == INSTANCE_RESET_ALL)
         {
             // the "reset all instances" method can only reset normal maps
-            if (entry->MapType == MAP_RAID || diff == DUNGEON_DIFFICULTY_HEROIC)
+            if (entry->MapType == MAP_RAID || instanceSave->GetDifficulty() == DUNGEON_DIFFICULTY_HEROIC)
             {
                 ++itr;
                 continue;
@@ -2409,8 +2400,8 @@ void Group::ResetInstances(uint8 method, bool isRaid, Player* SendMsgTo)
 
 
             // i don't know for sure if hash_map iterators
-            m_boundInstances[diff].erase(itr);
-            itr = m_boundInstances[diff].begin();
+            m_boundInstances.erase(itr);
+            itr = m_boundInstances.begin();
             // this unloads the instance save unless online players are bound to it
             // (eg. permanent binds or GM solo binds)
             instanceSave->RemoveGroup(this);
@@ -2422,16 +2413,14 @@ void Group::ResetInstances(uint8 method, bool isRaid, Player* SendMsgTo)
 
 InstanceGroupBind* Group::GetBoundInstance(Player* player)
 {
-    uint32 mapid = player->GetMapId();
-    MapEntry const* mapEntry = sMapStore.LookupEntry(mapid);
+    MapEntry const* mapEntry = sMapStore.LookupEntry(player->GetMapId());
     return GetBoundInstance(mapEntry);
 }
 
-InstanceGroupBind* Group::GetBoundInstance(Map* aMap)
+InstanceGroupBind* Group::GetBoundInstance(Map* map)
 {
     // Currently spawn numbering not different from map difficulty
-    Difficulty difficulty = GetDifficulty(aMap->IsRaid());
-    return GetBoundInstance(difficulty, aMap->GetId());
+    return GetBoundInstance(map->GetId());
 }
 
 InstanceGroupBind* Group::GetBoundInstance(MapEntry const* mapEntry)
@@ -2439,17 +2428,13 @@ InstanceGroupBind* Group::GetBoundInstance(MapEntry const* mapEntry)
     if (!mapEntry || !mapEntry->IsDungeon())
         return nullptr;
 
-    Difficulty difficulty = GetDifficulty(mapEntry->IsRaid());
-    return GetBoundInstance(difficulty, mapEntry->ID);
+    return GetBoundInstance(mapEntry->ID);
 }
 
-InstanceGroupBind* Group::GetBoundInstance(Difficulty difficulty, uint32 mapId)
+InstanceGroupBind* Group::GetBoundInstance(uint32 mapId)
 {
-    // some instances only have one difficulty
-    sDBCManager.GetDownscaledMapDifficultyData(mapId, difficulty);
-
-    BoundInstancesMap::iterator itr = m_boundInstances[difficulty].find(mapId);
-    if (itr != m_boundInstances[difficulty].end())
+    BoundInstancesMap::iterator itr = m_boundInstances.find(mapId);
+    if (itr != m_boundInstances.end())
         return &itr->second;
     else
         return nullptr;
@@ -2460,7 +2445,7 @@ InstanceGroupBind* Group::BindToInstance(InstanceSave* save, bool permanent, boo
     if (!save || isBGGroup() || isBFGroup())
         return nullptr;
 
-    InstanceGroupBind& bind = m_boundInstances[save->GetDifficulty()][save->GetMapId()];
+    InstanceGroupBind& bind = m_boundInstances[save->GetMapId()];
     if (!load && (!bind.save || permanent != bind.perm || save != bind.save))
     {
         CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_GROUP_INSTANCE);
@@ -2488,10 +2473,10 @@ InstanceGroupBind* Group::BindToInstance(InstanceSave* save, bool permanent, boo
     return &bind;
 }
 
-void Group::UnbindInstance(uint32 mapid, uint8 difficulty, bool unload)
+void Group::UnbindInstance(uint32 mapId, bool unload)
 {
-    BoundInstancesMap::iterator itr = m_boundInstances[difficulty].find(mapid);
-    if (itr != m_boundInstances[difficulty].end())
+    BoundInstancesMap::iterator itr = m_boundInstances.find(mapId);
+    if (itr != m_boundInstances.end())
     {
         if (!unload)
         {
@@ -2504,7 +2489,7 @@ void Group::UnbindInstance(uint32 mapid, uint8 difficulty, bool unload)
         }
 
         itr->second.save->RemoveGroup(this);                // save can become invalid
-        m_boundInstances[difficulty].erase(itr);
+        m_boundInstances.erase(itr);
     }
 }
 
@@ -2818,9 +2803,9 @@ void Group::DelinkMember(ObjectGuid guid)
     }
 }
 
-Group::BoundInstancesMap& Group::GetBoundInstances(Difficulty difficulty)
+Group::BoundInstancesMap& Group::GetBoundInstances()
 {
-    return m_boundInstances[difficulty];
+    return m_boundInstances;
 }
 
 void Group::_initRaidSubGroupsCounter()

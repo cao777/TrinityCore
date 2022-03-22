@@ -381,12 +381,12 @@ class TC_GAME_API Group
         void DelinkMember(ObjectGuid guid);
 
         InstanceGroupBind* BindToInstance(InstanceSave* save, bool permanent, bool load = false);
-        void UnbindInstance(uint32 mapid, uint8 difficulty, bool unload = false);
+        void UnbindInstance(uint32 mapId, bool unload = false);
         InstanceGroupBind* GetBoundInstance(Player* player);
-        InstanceGroupBind* GetBoundInstance(Map* aMap);
+        InstanceGroupBind* GetBoundInstance(Map* map);
         InstanceGroupBind* GetBoundInstance(MapEntry const* mapEntry);
-        InstanceGroupBind* GetBoundInstance(Difficulty difficulty, uint32 mapId);
-        BoundInstancesMap& GetBoundInstances(Difficulty difficulty);
+        InstanceGroupBind* GetBoundInstance(uint32 mapId);
+        BoundInstancesMap& GetBoundInstances();
 
         // FG: evil hacks
         void BroadcastGroupUpdate(void);
@@ -427,7 +427,7 @@ class TC_GAME_API Group
         ObjectGuid          m_looterGuid;
         ObjectGuid          m_masterLooterGuid;
         Rolls               RollId;
-        BoundInstancesMap   m_boundInstances[MAX_DIFFICULTY];
+        BoundInstancesMap   m_boundInstances;
         uint8*              m_subGroupsCounts;
         ObjectGuid          m_guid;
         uint32              m_counter;                      // used only in SMSG_GROUP_LIST

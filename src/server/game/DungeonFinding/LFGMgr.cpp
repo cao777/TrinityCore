@@ -874,7 +874,7 @@ void LFGMgr::GetCompatibleDungeons(LfgDungeonSet& dungeons, GuidSet const& playe
                     LFGDungeonData const* dungeon = GetLFGDungeon(dungeonId);
                     ASSERT(dungeon);
                     ASSERT(player);
-                    if (InstancePlayerBind* playerBind = player->GetBoundInstance(dungeon->map, Difficulty(dungeon->difficulty)))
+                    if (InstancePlayerBind* playerBind = player->GetBoundInstance(dungeon->map))
                     {
                         if (InstanceSave* playerSave = playerBind->save)
                         {
@@ -1801,9 +1801,9 @@ LfgLockMap const LFGMgr::GetLockedDungeons(ObjectGuid guid)
             lockStatus = LFG_LOCKSTATUS_RAID_LOCKED;
         else if (DisableMgr::IsDisabledFor(DISABLE_TYPE_LFG_MAP, dungeon->map, player))
             lockStatus = LFG_LOCKSTATUS_RAID_LOCKED;
-        else if (dungeon->difficulty > DUNGEON_DIFFICULTY_NORMAL && player->GetBoundInstance(dungeon->map, Difficulty(dungeon->difficulty)))
+        else if (dungeon->difficulty > DUNGEON_DIFFICULTY_NORMAL && player->GetBoundInstance(dungeon->map))
             lockStatus = LFG_LOCKSTATUS_RAID_LOCKED;
-        else if (dungeon->difficulty > DUNGEON_DIFFICULTY_NORMAL && player->GetBoundInstance(dungeon->map, Difficulty(dungeon->difficulty), dungeon->type == LFG_TYPE_RAID))
+        else if (dungeon->difficulty > DUNGEON_DIFFICULTY_NORMAL && player->GetBoundInstance(dungeon->map, dungeon->type == LFG_TYPE_RAID))
             lockStatus = LFG_LOCKSTATUS_RAID_LOCKED;
         else if (dungeon->minlevel > level)
             lockStatus = LFG_LOCKSTATUS_TOO_LOW_LEVEL;

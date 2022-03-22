@@ -2235,14 +2235,14 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
 
         uint32 m_HomebindTimer;
         bool m_InstanceValid;
-        // permanent binds and solo binds by difficulty
-        BoundInstancesMap m_boundInstances[MAX_DIFFICULTY];
-        InstancePlayerBind* GetBoundInstance(uint32 mapid, Difficulty difficulty, bool withExpired = false);
-        InstancePlayerBind const* GetBoundInstance(uint32 mapid, Difficulty difficulty, bool withExpired = false) const;
-        BoundInstancesMap& GetBoundInstances(Difficulty difficulty) { return m_boundInstances[difficulty]; }
-        InstanceSave* GetInstanceSave(uint32 mapid, bool raid);
-        void UnbindInstance(uint32 mapid, Difficulty difficulty, bool unload = false);
-        void UnbindInstance(BoundInstancesMap::iterator &itr, Difficulty difficulty, bool unload = false);
+        // permanent binds and solo binds
+        BoundInstancesMap m_boundInstances;
+        InstancePlayerBind* GetBoundInstance(uint32 mapId, bool withExpired = false);
+        InstancePlayerBind const* GetBoundInstance(uint32 mapId, bool withExpired = false) const;
+        BoundInstancesMap& GetBoundInstances() { return m_boundInstances; }
+        InstanceSave* GetInstanceSave(uint32 mapId);
+        void UnbindInstance(uint32 mapId, bool unload = false);
+        void UnbindInstance(BoundInstancesMap::iterator &itr, bool unload = false);
         InstancePlayerBind* BindToInstance(InstanceSave* save, bool permanent, BindExtensionState extendState = EXTEND_STATE_NORMAL, bool load = false);
         void BindToInstance();
         void SetPendingBind(uint32 instanceId, uint32 bindTimer);

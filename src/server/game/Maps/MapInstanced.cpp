@@ -140,7 +140,7 @@ Map* MapInstanced::CreateInstanceForPlayer(uint32 mapId, Player* player, uint32 
     }
     else
     {
-        InstancePlayerBind* pBind = player->GetBoundInstance(GetId(), player->GetDifficulty(IsRaid()));
+        InstancePlayerBind* pBind = player->GetBoundInstance(GetId());
         InstanceSave* pSave = pBind ? pBind->save : nullptr;
 
         // priority:
@@ -167,7 +167,7 @@ Map* MapInstanced::CreateInstanceForPlayer(uint32 mapId, Player* player, uint32 
                 if (groupBind)
                 {
                     // solo saves should be reset when entering a group's instance
-                    player->UnbindInstance(GetId(), player->GetDifficulty(IsRaid()));
+                    player->UnbindInstance(GetId());
                     pSave = groupBind->save;
                 }
             }
