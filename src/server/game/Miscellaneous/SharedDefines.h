@@ -4361,6 +4361,23 @@ enum RaidGroupReason
     RAID_GROUP_ERR_REQUIREMENTS_UNMATCH = 4  // "You do not meet the requirements to enter this instance."
 };
 
+
+enum class SetPlayerDifficultyResults : uint8
+{
+    Cooldown                        = 0, // "Raid difficulty has changed recently, and may not change again for {Cooldown} sec."
+    Worldstate                      = 1, // "Raid difficulty cannot be changed at this time. An event is in progress."
+    EncounterInProgress             = 2, // "Raid difficulty cannot be changed at this time. An encounter is in progress."
+    PlayerInCombat                  = 3, // "Raid difficulty cannot be changed at this time. A player is in combat."
+    PlayerBusy                      = 4, // "Raid difficulty cannot be changed at this time. A player is busy."
+    Start                           = 5, // Initializes the loading screen
+    AlreadyInProgress               = 6, // "A raid difficulty change is currently in progress."
+    FailedCondition                 = 7, // {MapDifficultyRequirement}
+    PlayerAlreadyLocked             = 8, // "Raid diffculty cannot be changed. {Guid} is already locked to a different Heroic instance."
+    HeroicInstanceAlreadyRunning    = 9, // "Your heroic instance is already in running and is in use by another party."
+    DisabledInLFG                   = 10,// "Using Raid Finder to enter this instance disables dynamic difficulty selection"
+    Complete                        = 11 // {MapID}{InstanceDifficulty} finishes the loading screen and sends the new difficulty data
+};
+
 #define MAX_CREATURE_SPELL_DATA_SLOT 4
 
 #endif

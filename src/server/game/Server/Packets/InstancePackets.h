@@ -137,6 +137,31 @@ namespace WorldPackets
 
             WorldPacket const* Write() override;
         };
+
+        class ChangePlayerDifficultyResult final : public ServerPacket
+        {
+        public:
+            ChangePlayerDifficultyResult() : ServerPacket(SMSG_CHANGE_PLAYER_DIFFICULTY_RESULT, 8) { }
+
+            WorldPacket const* Write() override;
+
+            int32 Result = 0;
+            int32 DifficultyRecID = 0;
+            int32 MapID = 0;
+            int32 InstanceDifficulty = 0;
+            int32 Cooldown = 0;
+            ObjectGuid Guid;
+        };
+
+        class SetDifficulty final : public ClientPacket
+        {
+        public:
+            SetDifficulty(WorldPacket&& packet) : ClientPacket(CMSG_SET_DIFFICULTY, std::move(packet)) { }
+
+            void Read() override;
+
+            uint32 Difficulty = 0;
+        };
     }
 }
 

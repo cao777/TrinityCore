@@ -18,6 +18,7 @@
 #include "InstancePackets.h"
 #include "InstanceScript.h"
 #include "Player.h"
+#include "SharedDefines.h"
 
 WorldPacket const* WorldPackets::Instance::UpdateLastInstance::Write()
 {
@@ -134,4 +135,34 @@ WorldPacket const* WorldPackets::Instance::UpdateInstanceEncounterUnit::Write()
 WorldPacket const* WorldPackets::Instance::UpdateDungeonEncounterForLoot::Write()
 {
     return &_worldPacket;
+}
+
+WorldPacket const* WorldPackets::Instance::ChangePlayerDifficultyResult::Write()
+{
+    _worldPacket << int32(Result);
+    switch (SetPlayerDifficultyResults(Result))
+    {
+        case SetPlayerDifficultyResults::Cooldown:
+            _worldPacket << int32(Cooldown);
+            break;
+        case SetPlayerDifficultyResults::FailedCondition:
+            _worldPacket << int32(DifficultyRecID);
+            break;
+        case SetPlayerDifficultyResults::PlayerAlreadyLocked:
+            _worldPacket.appendPackGUID(Guid);
+            break;
+        case SetPlayerDifficultyResults::Complete:
+            _worldPacket << int32(MapID);
+            _worldPacket << int32(InstanceDifficulty);
+            break;
+        default:
+            break;
+    }
+
+    return &_worldPacket;
+}
+
+void WorldPackets::Instance::SetDifficulty::Read()
+{
+    _worldPacket >> Difficulty;
 }

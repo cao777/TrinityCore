@@ -230,7 +230,7 @@ void OpcodeTable::Initialize()
     DEFINE_HANDLER(CMSG_CANCEL_TEMP_ENCHANTMENT,                          STATUS_LOGGEDIN,  PROCESS_INPLACE,      &WorldSession::HandleCancelTempEnchantmentOpcode);
     DEFINE_HANDLER(CMSG_CANCEL_TRADE,                                     STATUS_LOGGEDIN_OR_RECENTLY_LOGGOUT, PROCESS_THREADUNSAFE, &WorldSession::HandleCancelTradeOpcode);
     DEFINE_HANDLER(CMSG_CAST_SPELL,                                       STATUS_LOGGEDIN,  PROCESS_THREADSAFE,   &WorldSession::HandleCastSpellOpcode           );
-    DEFINE_HANDLER(CMSG_CHANGEPLAYER_DIFFICULTY,                          STATUS_LOGGEDIN,  PROCESS_THREADSAFE,   &WorldSession::HandleChangePlayerDifficulty    );
+    DEFINE_HANDLER(CMSG_SET_DIFFICULTY,                                   STATUS_LOGGEDIN,  PROCESS_THREADSAFE,   &WorldSession::HandleChangePlayerDifficulty    );
     DEFINE_HANDLER(CMSG_CHANGE_SEATS_ON_CONTROLLED_VEHICLE,               STATUS_LOGGEDIN,  PROCESS_INPLACE,      &WorldSession::HandleChangeSeatsOnControlledVehicle);
     DEFINE_HANDLER(CMSG_CHAT_CHANNEL_ANNOUNCEMENTS,                       STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleChannelAnnouncements      );
     DEFINE_HANDLER(CMSG_CHAT_CHANNEL_BAN,                                 STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleChannelBan                );
@@ -1115,7 +1115,7 @@ void OpcodeTable::Initialize()
     DEFINE_SERVER_OPCODE_HANDLER(SMSG_PLAYED_TIME,                                      STATUS_NEVER,       CONNECTION_TYPE_REALM);
     DEFINE_SERVER_OPCODE_HANDLER(SMSG_PLAYERBINDERROR,                                  STATUS_UNHANDLED,   CONNECTION_TYPE_REALM);
     DEFINE_SERVER_OPCODE_HANDLER(SMSG_PLAYERBOUND,                                      STATUS_NEVER,       CONNECTION_TYPE_REALM);
-    DEFINE_SERVER_OPCODE_HANDLER(SMSG_PLAYER_DIFFICULTY_CHANGE,                         STATUS_NEVER,       CONNECTION_TYPE_REALM);
+    DEFINE_SERVER_OPCODE_HANDLER(SMSG_CHANGE_PLAYER_DIFFICULTY_RESULT,                  STATUS_NEVER,       CONNECTION_TYPE_REALM);
     DEFINE_SERVER_OPCODE_HANDLER(SMSG_PLAYER_SKINNED,                                   STATUS_NEVER,       CONNECTION_TYPE_REALM);
     DEFINE_SERVER_OPCODE_HANDLER(SMSG_PLAY_DANCE,                                       STATUS_NEVER,       CONNECTION_TYPE_REALM);
     DEFINE_SERVER_OPCODE_HANDLER(SMSG_PLAY_MUSIC,                                       STATUS_NEVER,       CONNECTION_TYPE_REALM);
