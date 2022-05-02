@@ -641,9 +641,9 @@ public:
         if (target->IsAlive())
         {
             if (sWorld->getBoolConfig(CONFIG_DIE_COMMAND_MODE))
-                handler->GetSession()->GetPlayer()->Kill(target);
+                Unit::Kill(handler->GetSession()->GetPlayer(), target);
             else
-                handler->GetSession()->GetPlayer()->DealDamage(target, target->GetHealth(), nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, nullptr, false);
+                Unit::DealDamage(handler->GetSession()->GetPlayer(), target, target->GetHealth(), nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, nullptr, false);
         }
 
         return true;
@@ -2304,7 +2304,7 @@ public:
         // flat melee damage without resistence/etc reduction
         if (!schoolStr)
         {
-            handler->GetSession()->GetPlayer()->DealDamage(target, damage, nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, nullptr, false);
+            Unit::DealDamage(handler->GetSession()->GetPlayer(), target, damage, nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, nullptr, false);
             if (target != handler->GetSession()->GetPlayer())
                 handler->GetSession()->GetPlayer()->SendAttackStateUpdate (HITINFO_AFFECTS_VICTIM, target, 1, SPELL_SCHOOL_MASK_NORMAL, damage, 0, 0, VICTIMSTATE_HIT, 0);
             return true;
@@ -2317,7 +2317,7 @@ public:
         SpellSchoolMask schoolmask = SpellSchoolMask(1 << school);
 
         if (Unit::IsDamageReducedByArmor(schoolmask))
-            damage = handler->GetSession()->GetPlayer()->CalcArmorReducedDamage(target, damage, nullptr, BASE_ATTACK);
+            damage = Unit::CalcArmorReducedDamage(handler->GetSession()->GetPlayer(), target, damage, nullptr, BASE_ATTACK);
 
         char* spellStr = strtok((char*)nullptr, " ");
 
@@ -2326,7 +2326,7 @@ public:
         {
             Player* attacker = handler->GetSession()->GetPlayer();
             DamageInfo dmgInfo(attacker, target, damage, nullptr, schoolmask, SPELL_DIRECT_DAMAGE, BASE_ATTACK);
-            attacker->CalcAbsorbResist(dmgInfo);
+            Unit::CalcAbsorbResist(dmgInfo);
 
             if (!dmgInfo.GetDamage())
                 return true;
@@ -2335,8 +2335,8 @@ public:
 
             uint32 absorb = dmgInfo.GetAbsorb();
             uint32 resist = dmgInfo.GetResist();
-            attacker->DealDamageMods(target, damage, &absorb);
-            attacker->DealDamage(target, damage, nullptr, DIRECT_DAMAGE, schoolmask, nullptr, false);
+            Unit::DealDamageMods(target, damage, &absorb);
+            Unit::DealDamage(attacker, target, damage, nullptr, DIRECT_DAMAGE, schoolmask, nullptr, false);
             attacker->SendAttackStateUpdate(HITINFO_AFFECTS_VICTIM, target, 0, schoolmask, damage, absorb, resist, VICTIMSTATE_HIT, 0);
             return true;
         }
@@ -2354,7 +2354,7 @@ public:
 
         Player* attacker = handler->GetSession()->GetPlayer();
         SpellNonMeleeDamage dmgInfo(attacker, target, spellid, spellInfo->GetSchoolMask());
-        attacker->DealDamageMods(dmgInfo.target, dmgInfo.damage, &dmgInfo.absorb);
+        Unit::DealDamageMods(dmgInfo.target, dmgInfo.damage, &dmgInfo.absorb);
         attacker->SendSpellNonMeleeDamageLog(&dmgInfo);
         attacker->DealSpellDamage(&dmgInfo, true);
         return true;

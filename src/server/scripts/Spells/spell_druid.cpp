@@ -1264,6 +1264,8 @@ class spell_dru_rejuvenation : public AuraScript
         {
             if (AuraEffect* naturesBountyAurEff = caster->GetAuraEffect(SPELL_AURA_ADD_FLAT_MODIFIER, SPELLFAMILY_DRUID, SPELL_ICON_ID_NATURES_BOUNTY, EFFECT_0))
             {
+                /*
+                * @todo: rework
                 // a bit cheaty here but as long as we don't have a unit internal aura count...
                 naturesBountyAurEff->SetBonusAmount(naturesBountyAurEff->GetBonusAmount() + 1);
                 if (naturesBountyAurEff->GetBonusAmount() >= 3)
@@ -1271,6 +1273,7 @@ class spell_dru_rejuvenation : public AuraScript
                     int32 bp0 = -naturesBountyAurEff->GetSpellInfo()->Effects[EFFECT_1].BasePoints;
                     caster->CastSpell(caster, SPELL_DRUID_NATURES_BOUNTY, CastSpellExtraArgs(true).AddSpellBP0(bp0));
                 }
+                */
             }
         }
     }
@@ -1293,9 +1296,12 @@ class spell_dru_rejuvenation : public AuraScript
         {
             if (AuraEffect* naturesBountyAurEff = caster->GetAuraEffect(SPELL_AURA_ADD_FLAT_MODIFIER, SPELLFAMILY_DRUID, SPELL_ICON_ID_NATURES_BOUNTY, EFFECT_0))
             {
+                /*
+                * @todo: rework
                 naturesBountyAurEff->SetBonusAmount(naturesBountyAurEff->GetBonusAmount() > 0 ? naturesBountyAurEff->GetBonusAmount() - 1 : 0);
                 if (naturesBountyAurEff->GetBonusAmount() < 3 && caster->HasAura(SPELL_DRUID_NATURES_BOUNTY))
                     caster->RemoveAurasDueToSpell(SPELL_DRUID_NATURES_BOUNTY);
+                */
             }
         }
     }
