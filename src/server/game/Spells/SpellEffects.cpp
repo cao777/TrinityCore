@@ -26,6 +26,7 @@
 #include "DatabaseEnv.h"
 #include "DynamicObject.h"
 #include "Formulas.h"
+#include "GameEventSender.h"
 #include "GameObject.h"
 #include "GameObjectAI.h"
 #include "GameClient.h"
@@ -1014,12 +1015,7 @@ void Spell::EffectSendEvent(SpellEffIndex effIndex)
 
     TC_LOG_DEBUG("spells", "Spell ScriptStart %u for spellid %u in EffectSendEvent ", m_spellInfo->Effects[effIndex].MiscValue, m_spellInfo->Id);
 
-    if (ZoneScript* zoneScript = m_caster->GetZoneScript())
-        zoneScript->ProcessEvent(target, m_spellInfo->Effects[effIndex].MiscValue);
-    else if (InstanceScript* instanceScript = m_caster->GetInstanceScript())    // needed in case Player is the caster
-        instanceScript->ProcessEvent(target, m_spellInfo->Effects[effIndex].MiscValue);
-
-    m_caster->GetMap()->ScriptsStart(sEventScripts, m_spellInfo->Effects[effIndex].MiscValue, m_caster, target);
+    GameEvents::Trigger(m_spellInfo->Effects[effIndex].MiscValue, m_caster, target);
 }
 
 void Spell::EffectPowerBurn(SpellEffIndex effIndex)
@@ -1568,7 +1564,7 @@ void Spell::SendLoot(ObjectGuid guid, LootType loottype)
                 if (gameObjTarget->GetGOInfo()->chest.eventId)
                 {
                     TC_LOG_DEBUG("spells", "Chest ScriptStart id %u for GO %u", gameObjTarget->GetGOInfo()->chest.eventId, gameObjTarget->GetSpawnId());
-                    player->GetMap()->ScriptsStart(sEventScripts, gameObjTarget->GetGOInfo()->chest.eventId, player, gameObjTarget);
+                    GameEvents::Trigger(gameObjTarget->GetGOInfo()->chest.eventId, player, gameObjTarget);
                 }
 
                 // triggering linked GO
