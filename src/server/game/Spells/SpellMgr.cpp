@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -3481,7 +3481,7 @@ void SpellMgr::LoadSpellInfoCorrections()
         47134  // Quest Complete
     }, [](SpellInfo* spellInfo)
     {
-        //! HACK: This spell break quest complete for alliance and on retail not used �_O
+        //! HACK: This spell break quest complete for alliance and on retail not used °_O
         spellInfo->Effects[EFFECT_0].Effect = 0;
     });
 
@@ -5972,6 +5972,13 @@ void SpellMgr::LoadSpellInfoCorrections()
     ApplySpellFix({ 1943 }, [](SpellInfo* spellInfo)
     {
         spellInfo->AttributesEx |= SPELL_ATTR1_FINISHING_MOVE_DURATION;
+    });
+
+    // Combustion
+    // Patch 4.3.0 (2011-11-29): Combustion’s periodic damage can now critically hit.
+    ApplySpellFix({ 83853 }, [](SpellInfo* spellInfo)
+    {
+        spellInfo->AttributesEx8 |= SPELL_ATTR8_PERIODIC_CAN_CRIT;
     });
 
     for (uint32 i = 0; i < GetSpellInfoStoreSize(); ++i)
