@@ -19,6 +19,7 @@
 #include "CharacterCache.h"
 #include "Common.h"
 #include "DatabaseEnv.h"
+#include "DBCStores.h"
 #include "GameTime.h"
 #include "Log.h"
 #include "Map.h"
@@ -134,6 +135,15 @@ void Corpse::SaveToDB()
 void Corpse::DeleteFromDB(CharacterDatabaseTransaction& trans)
 {
     Corpse::DeleteFromDB(GetOwnerGUID(), trans);
+}
+
+uint32 Corpse::GetFaction() const
+{
+    // inherit faction from player race
+    uint32 const race = GetByteValue(CORPSE_FIELD_BYTES_1, 1);
+
+    ChrRacesEntry const* rEntry = sChrRacesStore.LookupEntry(race);
+    return rEntry ? rEntry->FactionID : 0;
 }
 
 void Corpse::DeleteFromDB(ObjectGuid const& ownerGuid, CharacterDatabaseTransaction& trans)
